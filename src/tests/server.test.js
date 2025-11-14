@@ -7,3 +7,15 @@ describe('GET /', () => {
     expect(res.statusCode).toBe(200);
   });
 });
+
+describe('GET /api/health', () => {
+  it('should show LearnX LMS API is running', async () => {
+    const res = await request(app).get('/api/health');
+    expect(res.statusCode).toBe(200);
+    
+    expect(res.body).toEqual({
+      success: true,
+      message: 'LearnX LMS API is running'
+    });
+  });
+});
