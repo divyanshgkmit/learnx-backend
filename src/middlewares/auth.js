@@ -1,33 +1,33 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-export const auth = async (req, res, next) => {
+export const authenticateUser = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     
     if (!token) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Access denied. No token provided.' 
+        message: 'Access token is required'
       });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
     
-    if (!user || user.deletedAt) {
-      return res.status(401).json({ 
+    if (!user) {
+      return res.status(401).json({
         success: false,
-        message: 'Token is not valid. User not found.' 
+        message: 'Invalid access token'
       });
     }
 
-    req.user = user;
+    req.user = { userId: user._id };
     next();
   } catch (error) {
-    res.status(401).json({ 
+    res.status(401).json({
       success: false,
-      message: 'Token is not valid' 
+      message: 'Invalid access token'
     });
   }
 };

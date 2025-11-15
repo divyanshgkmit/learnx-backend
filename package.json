@@ -7,7 +7,9 @@
   "scripts": {
     "test": "jest",
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "migrate": "node -r dotenv/config src/utils/runMigrations.js run",
+    "migrate:rollback": "node -r dotenv/config src/utils/runMigrations.js rollback"
   },
   "keywords": [],
   "author": "",

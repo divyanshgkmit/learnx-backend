@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
+import mongoose from "mongoose";
 
 dotenv.config();
 
@@ -14,17 +15,26 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.send("Hello Server Working!");
-});
-
 app.use("/api/auth", authRoutes);
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "LearnX LMS API is running",
-  });
+app.get("/api/health", async (req, res) => {
+  try {
+    await mongoose.connection.db.admin().ping();
+
+    res.status(200).json({
+      success: true,
+      message: "LearnX LMS API is running",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      success: false,
+      message: "LearnX LMS API is running",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.listen(PORT, () => {
