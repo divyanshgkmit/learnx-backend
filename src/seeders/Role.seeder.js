@@ -1,32 +1,25 @@
 import mongoose from 'mongoose';
-import { MigrationUtils } from '../utils/migration.utils.js';
 import Role from '../models/Role.js';
 
-export class RoleSeeder {
-  static async run() {
-    console.log('Seeding roles...');
-    await MigrationUtils.connectDB();
-    
-    const roles = [
-      { name: 'Student' },
-      { name: 'Instructor' }
-    ];
+const seedRoles = async () => {
+  console.log('Seeding roles...');
+  await mongoose.connect(process.env.MONGODB_URI);
+  
+  // Use findOneAndUpdate to handle duplicates
+  await Role.findOneAndUpdate(
+    { name: 'Student' },
+    { name: 'Student' },
+    { upsert: true }
+  );
+  
+  await Role.findOneAndUpdate(
+    { name: 'Instructor' },
+    { name: 'Instructor' },
+    { upsert: true }
+  );
 
-    for (const roleData of roles) {
-      await Role.findOneAndUpdate(
-        { name: roleData.name },
-        roleData,
-        { upsert: true, new: true }
-      );
-    }
+  console.log('Seeded 2 roles: Student, Instructor');
+  await mongoose.disconnect();
+};
 
-    console.log('Seeded 2 roles: Student, Instructor');
-  }
-
-  static async clear() {
-    console.log('Clearing roles...');
-    await MigrationUtils.connectDB();
-    await mongoose.connection.db.collection('roles').deleteMany({});
-    console.log('Roles cleared');
-  }
-}
+seedRoles();

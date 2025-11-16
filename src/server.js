@@ -30,7 +30,7 @@ app.get("/api/health", async (req, res) => {
   } catch (error) {
     res.status(503).json({
       success: false,
-      message: "LearnX LMS API is running",
+      message: "Database connection failed. Service is currently unavailable.",
       database: "disconnected",
       timestamp: new Date().toISOString(),
     });

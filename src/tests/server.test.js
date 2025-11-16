@@ -14,8 +14,13 @@ describe('Server Health Check', () => {
     }
   });
 
-  it('should show API is running message', async () => {
+  it('should return correct health message', async () => {
     const response = await request(app).get('/api/health');
-    expect(response.body.message).toBe('LearnX LMS API is running');
+
+    if (response.body.database === 'connected') {
+      expect(response.body.message).toBe('LearnX LMS API is running');
+    } else {
+      expect(response.body.message).toBe('Database connection failed. Service is currently unavailable.');
+    }
   });
 });

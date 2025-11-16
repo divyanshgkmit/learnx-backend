@@ -8,8 +8,18 @@
     "test": "jest",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "migrate": "node -r dotenv/config src/utils/runMigrations.js run",
-    "migrate:rollback": "node -r dotenv/config src/utils/runMigrations.js rollback"
+    
+    "migrate:roles": "node -r dotenv/config src/migrations/001_create_roles.js",
+    "migrate:users": "node -r dotenv/config src/migrations/002_create_users.js",
+    "migrate:userroles": "node -r dotenv/config src/migrations/003_create_user_roles.js",
+    "migrate": "npm run migrate:roles && npm run migrate:users && npm run migrate:userroles",
+    
+    "seed:roles": "node -r dotenv/config src/seeders/Role.seeder.js",
+    "seed:users": "node -r dotenv/config src/seeders/User.seeder.js",
+    "seed": "npm run seed:roles && npm run seed:users",
+    
+    "rollback": "node -r dotenv/config src/migrations/rollback.js",
+    "db:setup": "npm run migrate && npm run seed"
   },
   "keywords": [],
   "author": "",
