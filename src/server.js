@@ -19,7 +19,8 @@ connectDB();
 app.use(cors({
   origin: [
     "https://learnx-lms.vercel.app",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "http://localhost:4173"
   ],
   credentials: true
 }));
