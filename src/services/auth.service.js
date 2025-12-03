@@ -53,7 +53,8 @@ export class AuthService {
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        createdAt: user.createdAt
       },
       token,
       roles
