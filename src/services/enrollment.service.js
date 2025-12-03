@@ -54,11 +54,7 @@ export class EnrollmentService {
         }
       });
 
-    if (!enrollment) {
-      throw new Error('Not enrolled in this course');
-    }
-
-    return enrollment;
+    return {isEnrolled:!!enrollment}
   }
 
   static async markAsCompleted(studentId, courseId) {
