@@ -1,26 +1,20 @@
-import request from 'supertest';
-import app from '../server.js';
+import request from "supertest";
+import app from "../server.js";
+import { setupTestDB, cleanupTestDB } from "./setupTestDB.js";
 
-describe('Server Health Check', () => {
-  it('should return API health status', async () => {
-    const response = await request(app).get('/api/health');
-  
-    if (response.body.database === 'connected') {
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    } else {
-      expect(response.status).toBe(503);
-      expect(response.body.success).toBe(false);
-    }
-  });
+beforeAll(async () => {
+  await setupTestDB();
+});
 
-  it('should return correct health message', async () => {
-    const response = await request(app).get('/api/health');
+afterAll(async () => {
+  await cleanupTestDB();
+});
 
-    if (response.body.database === 'connected') {
-      expect(response.body.message).toBe('LearnX LMS API is running');
-    } else {
-      expect(response.body.message).toBe('Database connection failed. Service is currently unavailable.');
-    }
+describe("Server Health Check", () => {
+  it("should return API health status", async () => {
+    const res = await request(app).get("/api/health");
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("LearnX LMS API is running");
   });
 });
