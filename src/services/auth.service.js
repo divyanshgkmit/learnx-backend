@@ -53,7 +53,8 @@ export class AuthService {
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        createdAt: user.createdAt
       },
       token,
       roles
@@ -81,6 +82,6 @@ export class AuthService {
   }
 
   static generateToken(userId) {
-    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
   }
 }

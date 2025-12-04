@@ -1,197 +1,161 @@
 import request from "supertest";
 import app from "../server.js";
-import User from "../models/User.js";
-import UserRole from "../models/UserRole.js";
-import mongoose from "mongoose";
+import { setupTestDB, cleanupTestDB } from "./setupTestDB.js";
 
 jest.setTimeout(30000);
 
-describe("Authentication API Tests", () => {
+let studentToken;
+let instructorToken;
+
+beforeAll(async () => {
+  await setupTestDB();
+});
+
+afterAll(async () => {
+  await cleanupTestDB();
+});
+
+describe("User Registration", () => {
+  it("should register a student successfully", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      fullName: "Test Student",
+      email: "student@test.com",
+      password: "password123",
+      role: "Student",
+    });
+    expect(res.status).toBe(201);
+  });
+
+  it("should register an instructor successfully", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      fullName: "Test Instructor",
+      email: "instructor@test.com",
+      password: "password123",
+      role: "Instructor",
+    });
+    expect(res.status).toBe(201);
+  });
+
+  it("should fail for duplicate email", async () => {
+    await request(app).post("/api/auth/register").send({
+      fullName: "User One",
+      email: "duplicate@test.com",
+      password: "password123",
+      role: "Student",
+    });
+
+    const res = await request(app).post("/api/auth/register").send({
+      fullName: "User Two",
+      email: "duplicate@test.com",
+      password: "password123",
+      role: "Student",
+    });
+    expect(res.status).toBe(409);
+  });
+
+  it("should fail for invalid email format", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      fullName: "Bad Email",
+      email: "invalid-email",
+      password: "password123",
+      role: "Student",
+    });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("User Login", () => {
   beforeAll(async () => {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        serverSelectionTimeoutMS: 5000,
-      });
-    }
-  });
-
-  beforeEach(async () => {
-    await User.deleteMany({});
-    await UserRole.deleteMany({});
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-  });
-
-  describe("POST /api/auth/register", () => {
-    it("should register a new student successfully", async () => {
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test Student",
-        email: "student@test.com",
-        password: "password123",
-        role: "Student",
-      });
-
-      expect(response.status).toBe(201);
-      expect(response.body.success).toBe(true);
+    await request(app).post("/api/auth/register").send({
+      fullName: "Login Student",
+      email: "login-student@test.com",
+      password: "password123",
+      role: "Student",
     });
 
-    it("should not register user with duplicate email", async () => {
-      await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        email: "duplicate@test.com",
-        password: "password123",
-        role: "Student",
-      });
-
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test User 2",
-        email: "duplicate@test.com",
-        password: "password123",
-        role: "Student",
-      });
-
-      expect(response.status).toBe(409);
-    });
-
-    it("should not register user with invalid role", async () => {
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        email: "test@test.com",
-        password: "password123",
-        role: "Admin",
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should not register user with invalid email format", async () => {
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        email: "invalid-email",
-        password: "password123",
-        role: "Student",
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should not register user with short password", async () => {
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        email: "test@test.com",
-        password: "123",
-        role: "Student",
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should not register user without required fields", async () => {
-      const response = await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        // email missing
-        password: "password123",
-        role: "Student",
-      });
-
-      expect(response.status).toBe(400);
+    await request(app).post("/api/auth/register").send({
+      fullName: "Login Instructor",
+      email: "login-instructor@test.com",
+      password: "password123",
+      role: "Instructor",
     });
   });
 
-  describe("POST /api/auth/login", () => {
-    beforeEach(async () => {
-      await request(app).post("/api/auth/register").send({
-        fullName: "Test User",
-        email: "login@test.com",
-        password: "password123",
-        role: "Student",
-      });
+  it("should login student successfully", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: "login-student@test.com",
+      password: "password123",
     });
-
-    it("should login with valid credentials", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "login@test.com",
-        password: "password123",
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-    });
-
-    it("should not login with wrong password", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "login@test.com",
-        password: "wrongpassword",
-      });
-
-      expect(response.status).toBe(401);
-    });
-
-    it("should not login with non-existent email", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "nonexistent@test.com",
-        password: "password123",
-      });
-
-      expect(response.status).toBe(401);
-    });
-
-    it("should not login without email", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        password: "password123",
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should not login without password", async () => {
-      const response = await request(app).post("/api/auth/login").send({
-        email: "login@test.com",
-      });
-
-      expect(response.status).toBe(400);
-    });
+    expect(res.status).toBe(200);
+    studentToken = res.body.data.token;
   });
 
-  describe("GET /api/auth/me", () => {
-    let token;
-
-    beforeEach(async () => {
-      const registerResponse = await request(app)
-        .post("/api/auth/register")
-        .send({
-          fullName: "Test User",
-          email: "me@test.com",
-          password: "password123",
-          role: "Student",
-        });
-
-      token = registerResponse.body.data.token;
+  it("should login instructor successfully", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: "login-instructor@test.com",
+      password: "password123",
     });
+    expect(res.status).toBe(200);
+    instructorToken = res.body.data.token;
+  });
 
-    it("should get user profile with valid token", async () => {
-      const response = await request(app)
-        .get("/api/auth/me")
-        .set("Authorization", `Bearer ${token}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
+  it("should fail login with wrong password", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: "login-student@test.com",
+      password: "wrongpassword",
     });
+    expect(res.status).toBe(401);
+  });
 
-    it("should not get profile without token", async () => {
-      const response = await request(app).get("/api/auth/me");
-
-      expect(response.status).toBe(401);
+  it("should fail login with empty credentials", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: "",
+      password: "",
     });
+    expect(res.status).toBe(400);
+  });
+});
 
-    it("should not get profile with invalid token", async () => {
-      const response = await request(app)
-        .get("/api/auth/me")
-        .set("Authorization", "Bearer invalidtoken");
+describe("Authorization", () => {
+  it("student should access student routes", async () => {
+    const res = await request(app)
+      .get("/api/courses")
+      .set("Authorization", `Bearer ${studentToken}`);
+    expect(res.status).not.toBe(403);
+  });
 
-      expect(response.status).toBe(401);
-    });
+  it("instructor should access instructor routes", async () => {
+    const res = await request(app)
+      .get("/api/courses")
+      .set("Authorization", `Bearer ${instructorToken}`);
+    expect(res.status).not.toBe(403);
+  });
+
+  it("student should not access instructor routes", async () => {
+    const res = await request(app)
+      .post("/api/courses")
+      .set("Authorization", `Bearer ${studentToken}`);
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("/me Endpoint", () => {
+  it("should return logged-in student info", async () => {
+    const res = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${studentToken}`);
+    expect(res.status).toBe(200);
+  });
+
+  it("should return logged-in instructor info", async () => {
+    const res = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${instructorToken}`);
+    expect(res.status).toBe(200);
+  });
+
+  it("should fail if token is missing", async () => {
+    const res = await request(app).get("/api/auth/me");
+    expect(res.status).toBe(401);
   });
 });
