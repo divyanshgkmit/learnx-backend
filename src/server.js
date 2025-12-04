@@ -7,14 +7,17 @@ import courseRoutes from "./routes/courses.js";
 import moduleRoutes from "./routes/modules.js";
 import enrollmentRoutes from "./routes/enrollments.js";
 import uploadRoutes from "./routes/upload.js";
-import mongoose from "mongoose";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
 
-connectDB();
+if (process.env.NODE_ENV !== "test") {
+  connectDB().then(() => {
+    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+  });
+}
 
 app.use(cors({
   origin: [
@@ -34,8 +37,6 @@ app.use("/api/upload", uploadRoutes);
 
 app.get("/api/health", async (req, res) => {
   try {
-    await mongoose.connection.db.admin().ping();
-
     res.status(200).json({
       success: true,
       message: "LearnX LMS API is running",
@@ -65,10 +66,6 @@ app.use((err, req, res, next) => {
     success: false,
     message: 'Internal server error'
   });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });
 
 export default app;
